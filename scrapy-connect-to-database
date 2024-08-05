@@ -1,0 +1,49 @@
+Terminal: 
+scrapy startproject database_project
+cd database_project
+scrapy genspider databaseMongo "www.yellowpages.com/glendale-ca/restaurants"
+databaseMongo.py:
+
+import scrapy
+from scrapy.linkextractors import LinkExtractor
+from scrapy.spiders import Rule 
+
+class DatabasemongoSpider(scrapy.Spider):
+    name = "databaseMongo"
+    allowed_domains = ["www.yellowpages.com"]
+    start_urls = ["https://www.yellowpages.com/glendale-ca/restaurants"]
+
+    def parse(self, response):
+        links = response.xpath('//div[contains(@class, "search-results ")]/div/div/div/div/div/h2/a')
+
+        for l in links:
+            lname = l.xpath('.//@href').get()
+            print(lname)
+            yield response.follow(url=lname, callback=self.parse_dbmongo)
+
+    def parse_dbmongo(self, response):
+        title = response.xpath('//div[contains(@class, "sales-info")]/h1/text()').get()
+        yield{
+            'title':title,
+        }
+
+Pipeline:
+from itemadapter import ItemAdapter
+import logging
+import pymongo
+class ProjectDatabasePipeline:
+    collection_name = 'yellowPages'
+    def open_spider(self, spider):
+        self.client = pymongo.MongoClient("mongodb+srv://7vikasprasad:pass@vikas-cluster0.r61daaw.mongodb.net/")
+        self.db = self.client['ProjectDatabase']
+        logging.warning('Spider Opened - Pipeline')
+
+    def close_spider(self, spider):
+        self.client.close()
+        logging.warning('Spider CLosed - Pipeline')
+
+    def process_item(self, item, spider):
+        self.db[self.collection_name].insert_one(item)
+        return item
+Terminal:
+scrapy crawl databaseMongo
