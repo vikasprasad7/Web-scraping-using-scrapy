@@ -1,7 +1,7 @@
 Terminal: 
 scrapy startproject spider_tutorial
 cd spider_tutorial
-scrapy genspider spider_tutorial "www.audible.in/search"
+scrapy genspider audible "www.audible.in/search"
 audible.py
 
 import scrapy
